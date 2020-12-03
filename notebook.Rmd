@@ -1,0 +1,233 @@
+---
+title: "Average Urban Species Richness"
+output: html_notebook
+---
+
+Clear history
+```{r}
+rm(list=ls())
+```
+
+Load libraries
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(ggpubr)
+```
+
+```{r}
+data <- read_csv("data.csv")
+summary(data)
+```
+```{r}
+data
+```
+
+------------------------
+Average Species Richness
+------------------------
+```{r}
+shapiro.test(data$average_species_richness_5) 
+```
+NOT significantly different from normal
+
+---------------
+Population 2015
+---------------
+```{r}
+shapiro.test(data$population_2015) 
+```
+Significantly different to normal 
+
+```{r}
+ggplot(data = data, aes(x = population_2015, y = average_species_richness_5)) +
+ geom_point()
+```
+```{r}
+model_pop <- lm(average_species_richness_5 ~ population_2015, data)
+summary(model_pop)
+```
+
+--------------
+Built Up Area
+--------------
+```{r}
+shapiro.test(data$built_area) 
+```
+Significantly different to normal
+
+```{r}
+ggplot(data = data, aes(x = log(built_area), y = average_species_richness_5)) +
+ geom_point()
+```
+```{r}
+model_ba <- lm(average_species_richness_5 ~ log(built_area), data)
+summary(model_ba)
+```
+
+-------------
+Hotspot Count
+-------------
+```{r}
+shapiro.test(data$hotspot_count) 
+```
+Significantly diferent to normal
+
+```{r}
+shapiro.test(log(data$hotspot_count)) 
+```
+
+```{r}
+shapiro.test(sqrt(data$hotspot_count)) 
+```
+```{r}
+shapiro.test(log10(data$hotspot_count)) 
+```
+
+```{r}
+ggplot(data = data, aes(x = log(hotspot_count), y = average_species_richness_5)) +
+ geom_point()
+```
+```{r}
+model_hsc <- glm(average_species_richness_5 ~ log(hotspot_count), data, family = "gaussian")
+summary(model_hsc)
+```
+
+
+---------
+Latitude
+---------
+```{r}
+ggplot(data = data, aes(x = abs(nordpil_latitude), y = average_species_richness_5)) +
+ geom_point() + geom_abline(color="red")
+```
+
+```{r}
+model_lat <- glm(average_species_richness_5 ~ abs(nordpil_latitude), data, family = "gaussian")
+summary(model_lat)
+```
+
+----------
+Continent
+----------
+```{r}
+ggplot(data = data, aes(x = continent, y = average_species_richness_5)) +
+ geom_boxplot()
+```
+
+```{r}
+data$continent <- as.factor(data$continent)
+model_cont<-aov(average_species_richness_5~continent, data=data)
+summary(model_cont)
+```
+
+```{r}
+library(multcomp)
+cld(glht(model_cont, linfct=mcp(continent="Tukey")))
+```
+
+------------------
+Average checklists
+------------------
+```{r}
+shapiro.test(data$average_checklist)
+```
+
+```{r}
+shapiro.test(log(data$average_checklist))
+```
+```{r}
+shapiro.test(sqrt(data$average_checklist))
+```
+
+```{r}
+ggplot(data = data, aes(x = log(average_checklist), y = average_species_richness_5)) +
+ geom_point() 
+```
+
+```{r}
+model_cl <- glm(average_species_richness_5 ~ log(average_checklist), data, family = "gaussian")
+summary(model_cl)
+```
+
+------------------------------------------
+Check average checklists and hotspot count
+------------------------------------------
+```{r}
+ggplot(data = data, aes(x = log(average_checklist), y = log(hotspot_count))) +
+ geom_point() 
+```
+
+```{r}
+cor.test(data$average_checklist, data$hotspot_count)
+```
+```{r}
+cor.test(log(data$average_checklist), log(data$hotspot_count))
+```
+
+```{r}
+data_check <- data.frame(mn_species_richness = data$average_species_richness_5, log_hotspot_count = log(data$hotspot_count), log_mn_checklist_count = log(data$average_checklist), continent = data$continent)
+pairs(data_check[,1:3], col = data_check$continent)
+```
+
+```{r}
+library("GGally")  
+ggpairs(data_check[,1:3])
+```
+
+-------------
+More widely
+-------------
+```{r}
+names(data)
+```
+```{r}
+data_check2 <- data.frame(mn_species_richness = data$average_species_richness_5, log_mn_checklist_count = log(data$average_checklist), log_population = log(data$population_2015), log_built_area = log(data$built_area), latitute = abs(data$nordpil_latitude))
+ggpairs(data_check2)
+```
+
+
+
+```{r}
+data_check3 <- data.frame(mn_species_richness = data$average_species_richness_10, log_mn_checklist_count = log(data$average_checklist), log_population = log(data$population_2015), log_built_area = log(data$built_area), latitute = abs(data$nordpil_latitude))
+ggpairs(data_check3)
+```
+
+------------
+Some Models
+------------
+```{r}
+model1 <- glm(average_species_richness_5 ~abs(nordpil_latitude) + log(average_checklist) + log(population_2015), data, family = "gaussian")
+summary(model1)
+```
+
+```{r}
+model2 <- glm(average_species_richness_5 ~abs(nordpil_latitude) + log(average_checklist), data, family = "gaussian")
+summary(model2)
+```
+
+
+```{r}
+model3 <- glm(average_species_richness_10 ~abs(nordpil_latitude) + log(average_checklist) + log(population_2015), data, family = "gaussian")
+summary(model3)
+```
+
+
+
+```{r}
+model3 <- glm(average_species_richness_10 ~abs(nordpil_latitude) + log(average_checklist), data, family = "gaussian")
+summary(model3)
+```
+
+
+```{r}
+model4 <- glm(average_species_richness_15 ~abs(nordpil_latitude) + log(average_checklist), data, family = "gaussian")
+summary(model4)
+```
+
+
+
+```{r}
+model5 <- glm(average_species_richness_20 ~abs(nordpil_latitude) + log(average_checklist), data, family = "gaussian")
+summary(model5)
+```
